@@ -294,6 +294,23 @@ WaIHEacj
 WaIHEacj6
 [...]
 
-natas15 : WaIHEacj63wnNIBROHeqi3p9t0m5nhmh
+natas16 : WaIHEacj63wnNIBROHeqi3p9t0m5nhmh
 
 # natas16
+
+Este caso es una complicación de natas9 y natas 10 y se resuelve con una lógica similar al anterior. Se ejecuta un grep más sanitizado pero de la fuente resulta bastante obvio que se puede inyectar código con $(). La grecia está en cómo hacerlo...
+
+grep -i "<texto sanitizado>" dictionary.txt
+grep -i "$(echo injections)" dictionary.txt da como resultado "injections"
+
+A partir de ahí podemos empezar a buscar "letra a letra" en el fichero `/etc/natas_webpass/natas17`
+
+`$(grep <c> /etc/natas_webpass/natas17)`
+
+Completo sería:
+
+`grep -i "$(grep <c> /etc/natas_webpass/natas17)injections"` dictionary.txt
+
+¿Por qué se añade injections? Porque si el resultado de $() es nulo, seguirá apareciendo injections como resultado final. Sin embargo, si $() encuentra algo, el resultado final será nulo (porque no hay ningún "prefijo" que añadido a injections de resultado)
+
+A partir de ahí, hay que crear un script similar al del caso anteior.
