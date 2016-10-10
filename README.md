@@ -385,3 +385,5 @@ while true; do curl -s -c - -I -u natas19:4IwIrekcuZlA9OsjOkoUtwU6lhokCPYs 'http
 Basta pues con alterar ligeramente el script python del caso anterior para obtener las credenciales buscadas:
 
 natas20 : eofm3Wsshxc5bwtVnEuGIlr7ivb9KABF
+
+# natas20
